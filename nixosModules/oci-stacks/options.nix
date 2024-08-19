@@ -17,9 +17,7 @@ let
     };
   };
 
-  serviceOptions = args: {
-    options = { };
-  };
+  serviceOptions = args: { options = { }; };
 
   networkOptions = args: {
     options = {

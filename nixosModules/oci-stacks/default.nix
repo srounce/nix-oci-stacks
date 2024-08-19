@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 let
   cfg = config.virtualisation.oci-stacks;
@@ -9,7 +10,8 @@ let
   #mkStack = stackArgs@{ backend }: backends.${backend}.mkStack stackArgs;
 
   backends.podman = rec {
-    mkStackNetworks = { name, networks, ... }:
+    mkStackNetworks =
+      { name, networks, ... }:
       let
         defaultNetwork = mkNetwork {
           name = "${name}_default";
@@ -19,22 +21,34 @@ let
           };
         };
       in
-      { "${defaultNetwork.name}" = defaultNetwork.value; }
-      // (lib.mapAttrs'
-        (networkName: networkCfg: mkNetwork (networkCfg // {
-          name = "${name}_${networkName}";
-          stackName = name;
-        }))
-        networks
-      );
+      {
+        "${defaultNetwork.name}" = defaultNetwork.value;
+      }
+      // (lib.mapAttrs' (
+        networkName: networkCfg:
+        mkNetwork (
+          networkCfg
+          // {
+            name = "${name}_${networkName}";
+            stackName = name;
+          }
+        )
+      ) networks);
 
-    mkNetwork = { name, stackName, labels }:
+    mkNetwork =
+      {
+        name,
+        stackName,
+        labels,
+      }:
       let
         attrsToLabels = attrs: lib.mapAttrsToList (name: value: "${name}=${value}") attrs;
 
-        networkCreateArgs = [ ]
-          ++ (lib.optional (builtins.length (lib.attrNames labels) > 0) "--label ${lib.concatStringsSep "," (attrsToLabels labels)}")
-        ;
+        networkCreateArgs =
+          [ ]
+          ++ (lib.optional (
+            builtins.length (lib.attrNames labels) > 0
+          ) "--label ${lib.concatStringsSep "," (attrsToLabels labels)}");
       in
       {
         name = "oci-stacks-podman-network-${name}";
@@ -64,13 +78,13 @@ in
 {
   imports = [ ./options.nix ];
 
-  config = lib.mkIf (cfg.stacks != { }) (lib.mkMerge [
-    {
-      systemd.services = lib.concatMapAttrs
-        (name: stackCfg:
-          backends.${activeBackend}.mkStackNetworks (stackCfg // { inherit name; })
-        )
-        cfg.stacks;
-    }
-  ]);
+  config = lib.mkIf (cfg.stacks != { }) (
+    lib.mkMerge [
+      {
+        systemd.services = lib.concatMapAttrs (
+          name: stackCfg: backends.${activeBackend}.mkStackNetworks (stackCfg // { inherit name; })
+        ) cfg.stacks;
+      }
+    ]
+  );
 }

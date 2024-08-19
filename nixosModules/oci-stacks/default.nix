@@ -42,16 +42,18 @@ let
         labels,
       }:
       let
+        countAttrs = attrs: builtins.length (lib.attrNames attrs);
+
+        hasAttrs = attrs: countAttrs attrs > 0;
+
         attrsToLabels = attrs: lib.mapAttrsToList (name: value: "${name}=${value}") attrs;
 
         networkCreateArgs =
           [ ]
-          ++ (lib.optional (
-            builtins.length (lib.attrNames labels) > 0
-          ) "--label ${lib.concatStringsSep "," (attrsToLabels labels)}");
+          ++ (lib.optional (hasAttrs labels) "--label ${lib.concatStringsSep "," (attrsToLabels labels)}");
       in
       {
-        name = "oci-stacks-podman-network-${name}";
+        name = "oci-stacks-network-podman-${name}";
         value = {
           path = [ pkgs.podman ];
           serviceConfig = {
@@ -85,6 +87,7 @@ in
           name: stackCfg: backends.${activeBackend}.mkStackNetworks (stackCfg // { inherit name; })
         ) cfg.stacks;
       }
+      { virtualisation.oci-containers = { }; }
     ]
   );
 }

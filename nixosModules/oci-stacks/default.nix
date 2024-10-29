@@ -67,11 +67,23 @@ let
 
           '';
           partOf = [ "oci-stacks-${stackName}-root.target" ];
-          wantedBy = [
-            "multi-user.target"
-            "oci-stacks-${stackName}-root.target"
-          ];
+          wantedBy = [ "oci-stacks-${stackName}-root.target" ];
         };
+      };
+
+    mkContainer =
+      args:
+      let
+        inherit (args) stackName dependsOn;
+
+        containerArgs = builtins.removeAttrs args [
+          "stackName"
+          "dependsOn"
+        ];
+      in
+      containerArgs
+      // {
+        dependsOn = builtins.map (depName: "${stackName}-${depName}") dependsOn;
       };
   };
 
@@ -82,12 +94,31 @@ in
 
   config = lib.mkIf (cfg.stacks != { }) (
     lib.mkMerge [
+      # Per-stack root targets
+      {
+        systemd.targets = lib.mapAttrs' (name: _: {
+          name = "oci-stacks-${name}-root";
+          value = {
+            wantedBy = [ "multi-user.target" ];
+          };
+        }) cfg.stacks;
+      }
+      # Networks
       {
         systemd.services = lib.concatMapAttrs (
           name: stackCfg: backends.${activeBackend}.mkStackNetworks (stackCfg // { inherit name; })
         ) cfg.stacks;
       }
-      { virtualisation.oci-containers = { }; }
+      # Containers 
+      {
+        virtualisation.oci-containers.containers = lib.concatMapAttrs (
+          stackName: stack:
+          (lib.mapAttrs' (svcName: container: {
+            name = "${stackName}_${svcName}";
+            value = backends.${activeBackend}.mkContainer (container // { stackName = stackName; });
+          }) stack.services or { })
+        ) cfg.stacks;
+      }
     ]
   );
 }

@@ -1,11 +1,11 @@
-{ lib, ... }:
+{ lib, options, ... }:
 with lib;
 let
   stackOptions = args: {
     options = {
       services = mkOption {
-        default = builtins.trace args { };
-        type = types.attrsOf (types.submodule serviceOptions);
+        default = { };
+        type = types.attrsOf (types.submodule containerOptions);
         description = ""; # TODO
       };
 
@@ -17,7 +17,13 @@ let
     };
   };
 
-  serviceOptions = args: { options = { }; };
+  containerOptions = args: {
+    options = (
+      builtins.removeAttrs (options.virtualisation.oci-containers.containers.type.getSubOptions [ ]) [
+        "_module"
+      ]
+    );
+  };
 
   networkOptions = args: {
     options = {

@@ -23,14 +23,7 @@
         "x86_64-darwin"
       ];
       perSystem =
-        {
-          config,
-          self',
-          inputs',
-          pkgs,
-          system,
-          ...
-        }:
+        { pkgs, ... }:
         {
           checks = {
             vmtest = pkgs.callPackage ./tests/simple { inherit (self) nixosModules; };

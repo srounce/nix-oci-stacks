@@ -11,7 +11,7 @@ let
 
     environment.systemPackages = [
       pkgs.sysz
-      pkgs.podman
+      pkgs.curl
     ];
 
     security.pam.services.sshd.allowNullPassword = true;
@@ -30,19 +30,22 @@ pkgs.nixosTest {
 
   nodes = {
     machine =
-      { config, pkgs, ... }:
+      { ... }:
       {
         imports = [
           nixosModules.oci-stacks
           testHelper
         ];
 
+        networking.firewall.enable = false;
+
         virtualisation.oci-containers.backend = "podman";
 
         virtualisation.oci-stacks.stacks.test-stack = {
           services = {
             web = {
-              image = "nginx:1.27.1";
+              image = "nginx:1.27.1-alpine";
+              ports = [ "8080:80" ];
             };
           };
           networks = {

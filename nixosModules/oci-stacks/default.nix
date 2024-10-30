@@ -74,16 +74,16 @@ let
     mkContainer =
       args:
       let
-        inherit (args) stackName dependsOn;
-
         containerArgs = builtins.removeAttrs args [
           "stackName"
           "dependsOn"
+          "networks"
         ];
       in
       containerArgs
       // {
-        dependsOn = builtins.map (depName: "${stackName}-${depName}") dependsOn;
+        dependsOn = builtins.map (depName: "${args.stackName}-${depName}") args.dependsOn;
+        extraOptions = lib.concatMap (network: [ "--network" "${args.stackName}_${network}" ]) args.networks;
       };
   };
 

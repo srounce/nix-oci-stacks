@@ -22,7 +22,12 @@ let
       builtins.removeAttrs (options.virtualisation.oci-containers.containers.type.getSubOptions [ ]) [
         "_module"
       ]
-    );
+    ) // {
+      networks = mkOption {
+        type = types.listOf types.str;
+        default =  [ "default" ];
+      };
+    };
   };
 
   networkOptions = args: {

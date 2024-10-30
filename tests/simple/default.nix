@@ -12,6 +12,7 @@ let
     environment.systemPackages = [
       pkgs.sysz
       pkgs.curl
+      pkgs.jq
     ];
 
     security.pam.services.sshd.allowNullPassword = true;
@@ -47,6 +48,10 @@ pkgs.nixosTest {
               image = "nginx";
               imageStream = pkgs.dockerTools.examples.nginxStream;
               ports = [ "8080:80" ];
+              networks = [
+                "default"
+                "webstack"
+              ];
             };
           };
           networks = {

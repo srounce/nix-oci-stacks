@@ -44,7 +44,8 @@ pkgs.nixosTest {
         virtualisation.oci-stacks.stacks.test-stack = {
           services = {
             web = {
-              image = "nginx:1.27.1-alpine";
+              image = "nginx";
+              imageStream = pkgs.dockerTools.examples.nginxStream;
               ports = [ "8080:80" ];
             };
           };
